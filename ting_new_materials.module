@@ -28,6 +28,11 @@ function ting_new_materials_theme($existing, $type, $theme, $path) {
       'template'  => 'ting-new-materials',
       'path' => $path . '/templates',
     ),
+    'covers_search_results' => array(
+      'variables' => array('results' => NULL),
+      'template'  => 'covers-search-result',
+      'path' => $path . '/templates',
+    ),
   );
 }
 
