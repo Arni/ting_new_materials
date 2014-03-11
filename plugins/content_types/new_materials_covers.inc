@@ -23,38 +23,32 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
   // Define the return block.
   $block = new stdClass();
 
-
   // Check if context exists.
   if (isset($context[0]->data) && ($context[0]->data->type == 'new_materials' || $context[0]->data->type == 'genre_page')) {
     // Get the node.
     $node = $context[0]->data;
-
-    if (false && $cache = ting_new_materials_check_cache($node)) {
-      $content = $cache->data;
-      file_put_contents("/home/quickstart/work/debug/debuggenrecache3.txt", print_r("Ramt news 3" , TRUE), FILE_APPEND);
+    $cached_results = array();
+    if ( $cache = ting_new_materials_check_cache($node)) {
+      $cached_results = $cache->data;      
     } else {
-
       $pager_page = pager_find_page();
-
-      // Get number of results.
-      $items = field_get_items('node', $node, 'field_ting_new_materials_items');
-      $num_per_page = empty($items[0]['value']) ? 30 : $items[0]['value'];
+      $number_of_objects = ting_new_materials_number_of_objects($node);
+      $num_per_page = $number_of_objects * 2;
 
       $alma_query = field_get_items('node', $node, 'field_ddelibra_new_search');
       if (!empty($alma_query[0]['value'])) {
-        //Use alma to get results
+        // Use alma to get results
         $alma_query_string = $alma_query[0]['value'];
-        $query = ting_new_materials_search_alma_query($alma_query_string, 20);
+        $query = ting_new_materials_search_alma_query($alma_query_string, $num_per_page);
         $cached_query_string = $alma_query_string;
       } else {
-        //Use the datawell to get results
+        // Use the datawell to get results
         // Build search query based on node fields.
         $query = ting_new_materials_build_search_query($node);
-        $cached_query_string = $query; 
+        $cached_query_string = $query;
       }
       // Search the data well with the query and pager page.
       $search_result = ting_new_materials_do_search($query, $pager_page, $num_per_page);
-
 
       // Check if the search return any results.
       $results = NULL;
@@ -68,60 +62,81 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
         }
         $cover_result_ids = ting_new_materials_check_covers($cover_ids);
 
-        $number_of_objects = 15;
         $number_found = 0;
-        $results = array();
         foreach ($search_result->collections as $collection) {
           // If there is a image
           if (isset($cover_result_ids[$collection->primary_object->localId]) && $cover_result_ids[$collection->primary_object->localId]) {
-            // Build the collection.
-            $build = ting_collection_view($collection, 'teaser');
-
+            $object = new CoverObject();
+            $object->title = $collection->primary_object->title;
+            $object->creators = $collection->primary_object->creators;
+            $object->localId = $collection->primary_object->localId;
+            $object->ownerId = $collection->primary_object->ownerId;
+            $object->collectionTitle = $collection->title;
             // Get link to link the result back to the collection.
             $uri = entity_uri('ting_collection', $collection);
+            $object->uri = $uri['path'];
+            $cached_results[] = $object;
 
-            // Add the result to an array for the "ting_search_results" theme
-            // function.      
-            $image = theme('ting_object_cover', array('elements' => array('#object' => $collection->primary_object, '#image_style' => 'ting_new_materials_cover')));
-            $snippet = drupal_render($build);
-            $options = array(
-              'html' => TRUE,
-              'attributes' => array('title' => $collection->title),
-            );
-            $results[] = array(
-              'snippet' => l($image, $uri['path'], $options)
-            );
             $number_found++;
             if ($number_found >= $number_of_objects) {
               break;
             }
           }
-        }
+        }   
+        ting_new_materials_set_cached_lists($cached_query_string, 'cover15', $cached_results);
       }
+    }
+    $results = ting_new_materials_render_cover($cached_results);
+    // Set default page result.
+    $content = array(
+      '#theme' => 'ting_new_materials',
+      '#title' => $node->title,
+      '#availability_legend' => NULL,
+      '#legend' => isset($legend) ? $legend : NULL,
+    );
 
-      // Set default page result.
-      $content = array(
-        '#theme' => 'ting_new_materials',
-        '#title' => $node->title,
-        '#availability_legend' => NULL,
-        '#legend' => isset($legend) ? $legend : NULL,
+    // If any search result have been found add them to the array.
+    if (!is_null($results)) {
+      $content['#results'] = array(
+        '#theme' => 'covers_search_results',
+        '#results' => $results,
       );
-
-      // If any search result have been found add them to the array.
-      if (!is_null($results)) {
-        $content['#results'] = array(
-          '#theme' => 'covers_search_results',
-          '#results' => $results,
-        );
-      }
-      ting_new_materials_set_cached_lists($cached_query_string, 'cover15', $content);
     }
 
+    drupal_add_js(drupal_get_path('module', 'ting_covers') . '/js/ting-covers.js');
     // Set block content.
     $block->content = $content;
   }
 
   return $block;
+}
+
+function ting_new_materials_render_cover($cached_results) {
+  $results = array();
+  foreach ($cached_results as $object) {
+    // Add the result to an array for the "ting_search_results" theme
+    // function.      
+    $image = theme('ting_object_cover', array('elements' => array('#object' => $object, '#image_style' => 'ting_new_materials_cover')));
+    $options = array(
+      'html' => TRUE,
+      'attributes' => array('title' => $object->collectionTitle),
+    );
+    $results[] = array(
+      'snippet' => l($image, $object->uri, $options)
+    );
+  }
+  return $results;
+}
+
+function ting_new_materials_number_of_objects($node) {
+  $number_per_row = variable_get('ting_genre_pages_default_number_per_row', 7);
+  $number_of_rows = 3;
+
+  $items = field_get_items('node', $node, 'field_new_materials_row_count');
+  if (isset($items) && is_array($items) && isset($items[0]['value'])) {
+    $number_of_rows = $items[0]['value'];
+  }
+  return $number_of_rows * $number_per_row;
 }
 
 /**
@@ -217,7 +232,7 @@ function ting_new_materials_fetch_image($filename, $image_url) {
 function ting_new_materials_get_by_curl ($url) {
 $agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8';
 $curl_handle=curl_init();
-curl_setopt($curl_handle, CURLOPT_PROXY, '172.18.0.40:8080');
+curl_setopt($curl_handle, CURLOPT_PROXY, '172.18.0.30:8080');
 curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($curl_handle, CURLOPT_USERAGENT, $agent);
 curl_setopt($curl_handle,CURLOPT_URL, $url);
