@@ -90,7 +90,7 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
     // Set default page result.
     $content = array(
       '#theme' => 'ting_new_materials',
-      '#title' => $node->title,
+      '#title' => 'Nyheder',
       '#availability_legend' => NULL,
       '#legend' => isset($legend) ? $legend : NULL,
     );
