@@ -28,7 +28,7 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
     // Get the node.
     $node = $context[0]->data;
     $cached_results = array();
-    if ( $cache = ting_new_materials_check_cache($node)) {
+    if ($cache = ting_new_materials_check_cache($node)) {
       $cached_results = $cache->data;      
     } else {
       $pager_page = pager_find_page();
@@ -49,7 +49,6 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
       }
       // Search the data well with the query and pager page.
       $search_result = ting_new_materials_do_search($query, $pager_page, $num_per_page);
-
       // Check if the search return any results.
       $results = NULL;
       if ($search_result->numTotalObjects > 0) {
@@ -57,7 +56,7 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
         foreach ($search_result->collections as $collection) {
           $cover_ids[] = array(
             'local_id' => $collection->primary_object->localId,
-            'owner_id' => $collection->primary_object->ownerId
+            'owner_id' => '773000' //$collection->primary_object->ownerId
           );
         }
         $cover_result_ids = ting_new_materials_check_covers($cover_ids);
