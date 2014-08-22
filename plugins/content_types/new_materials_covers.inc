@@ -160,7 +160,7 @@ function ting_new_materials_check_covers($covers_ids) {
 
   foreach ($covers_ids as $cover_id) {
     // Determine if the local id is a known negative.
-    if (cache_get('ting_covers:' . $cover_id, FALSE)) {
+    if (cache_get('ting_covers:' . $cover_id['local_id'], FALSE)) {
       $result_ids[$cover_id['local_id']] = FALSE;
       break;
     }
