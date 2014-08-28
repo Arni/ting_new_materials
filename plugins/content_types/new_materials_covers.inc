@@ -27,6 +27,9 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
   if (isset($context[0]->data) && ($context[0]->data->type == 'new_materials' || $context[0]->data->type == 'genre_page')) {
     // Get the node.
     $node = $context[0]->data;
+    if (ting_new_materials_no_search_query($node)) {
+      return $block;
+    }
     $cached_results = array();
     if ($cache = ting_new_materials_check_cache($node)) {
       $cached_results = $cache->data;      
@@ -108,6 +111,12 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
   }
 
   return $block;
+}
+
+function ting_new_materials_no_search_query($node) {
+  $alma_query = field_get_items('node', $node, 'field_ddelibra_new_search');
+  $well_query = field_get_items('node', $node, 'field_ting_new_materials_search');
+  return (empty($alma_query[0]['value']) && empty($well_query[0]['value']));
 }
 
 function ting_new_materials_render_cover($cached_results) {
