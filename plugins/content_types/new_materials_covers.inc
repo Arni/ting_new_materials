@@ -222,7 +222,7 @@ function ting_new_materials_check_cache($node) {
  * Gets a cached block of inpiration list in desired format.
  */
 function ting_new_materials_get_cached_lists($query, $format) {  
-   if ($cache = cache_get(ting_new_materials_make_cache_string($query, $format), 'cache_ting_inspiration_list')) {
+   if ($cache = cache_get(ting_new_materials_make_cache_string($query, $format))) {
      return $cache;
    } else {
      return null;
@@ -235,7 +235,7 @@ function ting_new_materials_get_cached_lists($query, $format) {
 function ting_new_materials_set_cached_lists($query, $format, $block) {  
    $cid = ting_new_materials_make_cache_string($query, $format);
    // Save cache for a week.
-   cache_set($cid, $block, 'cache_ting_inspiration_list', time() + 604800);
+   cache_set($cid, $block, 'cache', time() + 604800);
 }
 
 /**
