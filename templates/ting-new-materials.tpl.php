@@ -2,6 +2,7 @@
 /**
  * @file
  * Default theme implementation for displaying ting new materials results.
+ *
  */
 ?>
 <?php if ($title) : ?>
@@ -19,9 +20,13 @@
   </div>
 <?php endif; ?>
 <?php if ($results) : ?>
+  <div class="ding-availability-legend">
+    <?php print $availability_legend; ?>
+  </div>  
   <?php print drupal_render($results); ?>
 <?php else : ?>
   <div class="no-results-this-period">
     <?php print t('There were no new materials in this period'); ?>
   </div>
 <?php endif; ?>
+
