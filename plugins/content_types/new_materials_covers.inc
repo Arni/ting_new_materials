@@ -31,9 +31,11 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
       return $block;
     }
     $cached_results = array();
-    if (false && $cache = ting_new_materials_check_cache($node)) {
+    if ($cache = ting_new_materials_check_cache($node)) {
+      file_put_contents("/var/www/drupalvm/drupal/debug/newmat1.txt", print_r("cache", TRUE), FILE_APPEND);
       $cached_results = $cache->data;
     } else {
+      file_put_contents("/var/www/drupalvm/drupal/debug/newmat2.txt", print_r("no cache", TRUE), FILE_APPEND);
       $pager_page = pager_find_page();
       $number_of_objects = ting_new_materials_number_of_objects($node);
       $num_per_page = $number_of_objects * 2;
@@ -42,7 +44,7 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
 
       // Search the data well with the query and pager page.
       $search_result = ting_new_materials_do_search($query, $pager_page, $num_per_page);
-file_put_contents("/var/www/drupalvm/drupal/debug/newmat8.txt", print_r($search_result, TRUE), FILE_APPEND);
+
       // Check if the search return any results. 
       if ($search_result->numTotalObjects > 0) {
         $covers = ting_covers_get(array_keys($search_result->collections));
@@ -52,9 +54,9 @@ file_put_contents("/var/www/drupalvm/drupal/debug/newmat8.txt", print_r($search_
           // If there is a image
           if (isset($cover)) {
             $object = new CoverObject();
-            //$entity = ding_entity_load($id, 'ting_object');
-            //$object->title = $entity->getTitle();;
-            //$object->creators = $entity->getCreators()[0];
+            $entity = ding_entity_load($id);
+            $object->title = $entity->getTitle();;
+            $object->creators = $entity->getCreators()[0];
             $object->id = $id;
             $object->cover = $cover;
             // Get link to link the result back to the collection.
@@ -70,8 +72,8 @@ file_put_contents("/var/www/drupalvm/drupal/debug/newmat8.txt", print_r($search_
         }
         ting_new_materials_set_cached_lists($query, 'cover15', $cached_results);
       }
-    }
-    //file_put_contents("/var/www/drupalvm/drupal/debug/newmat4.txt", print_r($cached_results, TRUE), FILE_APPEND);
+    } 
+
     $results = ting_new_materials_render_cover($cached_results);
     // Set default page result.
     $content = array(
@@ -107,12 +109,24 @@ function ting_new_materials_render_cover($cached_results) {
     // Add the result to an array for the "ting_search_results" theme
     // function.      
     $image = theme('ting_object_cover', array('elements' => array('#object' => $object, '#image_style' => 'ting_new_materials_cover')));
+    
     $options = array(
         'html' => TRUE,
-        'attributes' => array('title' => $object->collectionTitle),
+        'attributes' => array('title' => $object->title),
     );
+    if (isset($object->creators)) {
+      $creators = $object->creators;
+    } else {
+      $creators = '';
+    }
+    if (strlen($object->title) > 40) {
+      $object->title = substr($object->title,0,40) . ' ...';
+    }
+    $title_info = '<div class="ting-new-materials-item-title">' . $object->title . '<br/><b>' . $creators . '</b></div>';
+    $item = $image . $title_info;
+    
     $results[] = array(
-        'snippet' => l($image, $object->uri, $options)
+        'snippet' => l($item, $object->uri, $options)
     );
   }
   return $results;
