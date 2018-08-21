@@ -32,10 +32,9 @@ function ting_new_materials_covers_content_type_render($subtype, $conf, $panel_a
     }
     $cached_results = array();
     if ($cache = ting_new_materials_check_cache($node)) {
-      file_put_contents("/var/www/drupalvm/drupal/debug/newmat1.txt", print_r("cache", TRUE), FILE_APPEND);
+      //file_put_contents("/var/www/drupalvm/drupal/debug/newmat1.txt", print_r("cache", TRUE), FILE_APPEND);
       $cached_results = $cache->data;
     } else {
-      file_put_contents("/var/www/drupalvm/drupal/debug/newmat2.txt", print_r("no cache", TRUE), FILE_APPEND);
       $pager_page = pager_find_page();
       $number_of_objects = ting_new_materials_number_of_objects($node);
       $num_per_page = $number_of_objects * 2;
